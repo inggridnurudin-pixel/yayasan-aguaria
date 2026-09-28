@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { type PageKey } from '@/types';
-import { notifikasiData } from '@/data/dummyData';
+import { useApp } from '@/context/AppContext';
 import { Bell, Search, Menu, ChevronDown, HandHeart, ArrowRightLeft, Info } from 'lucide-react';
 
 interface TopbarProps {
   page: PageKey;
   onToggleSidebar: () => void;
+  onNavigate: (page: PageKey) => void;
 }
 
 const pageTitles: Record<PageKey, { title: string; subtitle: string }> = {
@@ -18,13 +19,17 @@ const pageTitles: Record<PageKey, { title: string; subtitle: string }> = {
   pengaturan: { title: 'Pengaturan', subtitle: 'Konfigurasi sistem' },
 };
 
-export function Topbar({ page, onToggleSidebar }: TopbarProps) {
+export function Topbar({ page, onToggleSidebar, onNavigate }: TopbarProps) {
+  const { notifikasi, markAllNotifRead, markNotifRead } = useApp();
+
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-  const unreadCount = notifikasiData.filter((n) => !n.dibaca).length;
 
+  const unreadCount = notifikasi.filter((n) => !n.dibaca).length;
+
+  /* ── Tutup dropdown kalau klik di luar ── */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
@@ -40,6 +45,13 @@ export function Topbar({ page, onToggleSidebar }: TopbarProps) {
     return <Info size={16} className="text-sky-600" />;
   };
 
+  const handleNotifClick = (id: number, tipe: string) => {
+    markNotifRead(id);
+    // Arahkan ke halaman yang relevan
+    if (tipe === 'donasi') { onNavigate('donasi'); setNotifOpen(false); }
+    else if (tipe === 'penyaluran') { onNavigate('penyaluran'); setNotifOpen(false); }
+  };
+
   const { title, subtitle } = pageTitles[page];
 
   return (
@@ -48,6 +60,7 @@ export function Topbar({ page, onToggleSidebar }: TopbarProps) {
         <button
           onClick={onToggleSidebar}
           className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+          aria-label="Toggle sidebar"
         >
           <Menu size={20} />
         </button>
@@ -58,6 +71,7 @@ export function Topbar({ page, onToggleSidebar }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-2 lg:gap-3">
+        {/* Search */}
         <div className="hidden lg:flex items-center relative">
           <Search size={18} className="absolute left-3 text-gray-400 pointer-events-none" />
           <input
@@ -67,10 +81,12 @@ export function Topbar({ page, onToggleSidebar }: TopbarProps) {
           />
         </div>
 
+        {/* Notifikasi */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setNotifOpen(!notifOpen)}
             className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+            aria-label="Notifikasi"
           >
             <Bell size={20} />
             {unreadCount > 0 && (
@@ -79,39 +95,62 @@ export function Topbar({ page, onToggleSidebar }: TopbarProps) {
               </span>
             )}
           </button>
+
           {notifOpen && (
             <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl ring-1 ring-gray-200 animate-scale-in overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="text-sm font-bold text-gray-900">Notifikasi</h3>
-                <span className="text-xs text-brand-600 font-semibold cursor-pointer hover:underline">
-                  Tandai semua dibaca
-                </span>
-              </div>
-              <div className="max-h-80 overflow-y-auto scrollbar-thin">
-                {notifikasiData.map((n) => (
-                  <div
-                    key={n.id}
-                    className={`flex gap-3 px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
-                      !n.dibaca ? 'bg-brand-50/40' : ''
-                    }`}
+                <h3 className="text-sm font-bold text-gray-900">
+                  Notifikasi
+                  {unreadCount > 0 && (
+                    <span className="ml-2 text-xs text-white bg-red-500 rounded-full px-1.5 py-0.5">{unreadCount}</span>
+                  )}
+                </h3>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllNotifRead}
+                    className="text-xs text-brand-600 font-semibold hover:underline"
                   >
-                    <div className="mt-0.5 shrink-0">
-                      <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                        {notifIcon(n.tipe)}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">{n.judul}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.pesan}</p>
-                      <p className="text-xs text-gray-400 mt-1">{n.waktu}</p>
-                    </div>
-                    {!n.dibaca && <div className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 shrink-0" />}
-                  </div>
-                ))}
+                    Tandai semua dibaca
+                  </button>
+                )}
               </div>
+
+              <div className="max-h-80 overflow-y-auto scrollbar-thin">
+                {notifikasi.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-8">Tidak ada notifikasi</p>
+                ) : (
+                  notifikasi.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => handleNotifClick(n.id, n.tipe)}
+                      className={`flex gap-3 px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
+                        !n.dibaca ? 'bg-brand-50/40' : ''
+                      }`}
+                    >
+                      <div className="mt-0.5 shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                          {notifIcon(n.tipe)}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">{n.judul}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.pesan}</p>
+                        <p className="text-xs text-gray-400 mt-1">{n.waktu}</p>
+                      </div>
+                      {!n.dibaca && (
+                        <div className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
               <div className="px-4 py-2.5 border-t border-gray-100">
-                <button className="w-full text-center text-sm font-semibold text-brand-600 hover:text-brand-700">
-                  Lihat semua notifikasi
+                <button
+                  onClick={() => { onNavigate('donasi'); setNotifOpen(false); }}
+                  className="w-full text-center text-sm font-semibold text-brand-600 hover:text-brand-700"
+                >
+                  Lihat semua aktivitas
                 </button>
               </div>
             </div>
@@ -120,6 +159,7 @@ export function Topbar({ page, onToggleSidebar }: TopbarProps) {
 
         <div className="w-px h-8 bg-gray-200 hidden sm:block" />
 
+        {/* Profil */}
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setProfileOpen(!profileOpen)}
@@ -134,6 +174,7 @@ export function Topbar({ page, onToggleSidebar }: TopbarProps) {
             </div>
             <ChevronDown size={16} className="text-gray-400 hidden sm:block" />
           </button>
+
           {profileOpen && (
             <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl ring-1 ring-gray-200 animate-scale-in overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100">
@@ -141,13 +182,22 @@ export function Topbar({ page, onToggleSidebar }: TopbarProps) {
                 <p className="text-xs text-gray-500">admin@yayasan.org</p>
               </div>
               <div className="py-1">
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => { onNavigate('pengaturan'); setProfileOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
                   Profil Saya
                 </button>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => { onNavigate('pengaturan'); setProfileOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
                   Pengaturan Akun
                 </button>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                <button
+                  onClick={() => alert('Fitur logout akan tersedia setelah autentikasi diimplementasikan.')}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
                   Keluar
                 </button>
               </div>

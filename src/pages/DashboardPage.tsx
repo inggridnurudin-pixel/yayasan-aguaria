@@ -1,23 +1,20 @@
+import { type PageKey } from '@/types';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Badge, statusVariant } from '@/components/ui/Badge';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { BarChart } from '@/components/charts/BarChart';
 import { DonutChart } from '@/components/charts/DonutChart';
-import { donasiData, penyaluranData, chartDonasiBulanan, chartPenyaluranBulanan } from '@/data/dummyData';
+import { useApp } from '@/context/AppContext';
+import { chartDonasiBulanan, chartPenyaluranBulanan } from '@/data/dummyData';
 import { formatRupiah, formatRupiahShort, formatTanggal } from '@/utils/format';
-import { TrendingUp, TrendingDown, Wallet, Users, HandHeart, ArrowRightLeft, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import {
+  TrendingUp, TrendingDown, Wallet, Users, HandHeart,
+  ArrowRightLeft, ArrowUpRight, ArrowDownRight,
+} from 'lucide-react';
 
-const totalDonasi = donasiData.filter((d) => d.status === 'Lunas').reduce((s, d) => s + d.nominal, 0);
-const totalPenyaluran = penyaluranData.filter((p) => p.status === 'Disalurkan').reduce((s, p) => s + p.nominal, 0);
-const saldoDana = totalDonasi - totalPenyaluran;
-const jumlahDonatur = 10;
-
-const stats = [
-  { label: 'Total Donasi', value: formatRupiah(totalDonasi), change: '+12.5%', trend: 'up', icon: HandHeart, color: 'brand' },
-  { label: 'Total Penyaluran Dana', value: formatRupiah(totalPenyaluran), change: '+8.2%', trend: 'up', icon: ArrowRightLeft, color: 'amber' },
-  { label: 'Saldo Dana', value: formatRupiah(saldoDana), change: '+15.3%', trend: 'up', icon: Wallet, color: 'emerald' },
-  { label: 'Jumlah Donatur', value: String(jumlahDonatur), change: '+2', trend: 'up', icon: Users, color: 'sky' },
-];
+interface DashboardPageProps {
+  onNavigate: (page: PageKey) => void;
+}
 
 const colorMap: Record<string, string> = {
   brand: 'bg-brand-50 text-brand-600',
@@ -26,12 +23,55 @@ const colorMap: Record<string, string> = {
   sky: 'bg-sky-50 text-sky-600',
 };
 
-export function DashboardPage() {
-  const donasiTerbaru = donasiData.slice(0, 5);
-  const penyaluranTerbaru = penyaluranData.slice(0, 5);
+/* Warna tetap per jenis donasi untuk DonutChart */
+const DONUT_COLORS: Record<string, string> = {
+  Tunai: '#2563eb',
+  Zakat: '#f59e0b',
+  Infaq: '#10b981',
+  Wakaf: '#8b5cf6',
+  Barang: '#64748b',
+};
+
+export function DashboardPage({ onNavigate }: DashboardPageProps) {
+  const { donasi, penyaluran, donatur } = useApp();
+
+  const lunasDonasi = donasi.filter((d) => d.status === 'Lunas');
+  const disalurkanPenyaluran = penyaluran.filter((p) => p.status === 'Disalurkan');
+
+  const totalDonasi = lunasDonasi.reduce((s, d) => s + d.nominal, 0);
+  const totalPenyaluran = disalurkanPenyaluran.reduce((s, p) => s + p.nominal, 0);
+  const saldoDana = totalDonasi - totalPenyaluran;
+
+  /* ── DonutChart — komposisi donasi dari data nyata ── */
+  const donutData = (() => {
+    const totals: Record<string, number> = {};
+    lunasDonasi.forEach((d) => {
+      totals[d.jenis] = (totals[d.jenis] ?? 0) + d.nominal;
+    });
+    const grandTotal = Object.values(totals).reduce((a, b) => a + b, 0) || 1;
+    return Object.entries(totals).map(([label, value]) => ({
+      label,
+      value: Math.round((value / grandTotal) * 100),
+      color: DONUT_COLORS[label] ?? '#94a3b8',
+    }));
+  })();
+
+  const stats = [
+    { label: 'Total Donasi', value: formatRupiah(totalDonasi), change: '+12.5%', trend: 'up', icon: HandHeart, color: 'brand' },
+    { label: 'Total Penyaluran Dana', value: formatRupiah(totalPenyaluran), change: '+8.2%', trend: 'up', icon: ArrowRightLeft, color: 'amber' },
+    { label: 'Saldo Dana', value: formatRupiah(saldoDana), change: '+15.3%', trend: 'up', icon: Wallet, color: 'emerald' },
+    { label: 'Jumlah Donatur', value: String(donatur.length), change: '+2', trend: 'up', icon: Users, color: 'sky' },
+  ];
+
+  const donasiTerbaru = donasi.slice(0, 5);
+  const penyaluranTerbaru = penyaluran.slice(0, 5);
+
+  // Suppress unused import warning
+  void formatRupiahShort;
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -53,6 +93,7 @@ export function DashboardPage() {
         })}
       </div>
 
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader
@@ -62,7 +103,11 @@ export function DashboardPage() {
             action={<Badge variant="success" size="sm"><TrendingUp size={12} /> +18.2%</Badge>}
           />
           <div className="p-5">
-            <AreaChart data={chartDonasiBulanan.map((d) => ({ label: d.bulan, value: d.nilai }))} color="#2563eb" height={220} />
+            <AreaChart
+              data={chartDonasiBulanan.map((d) => ({ label: d.bulan, value: d.nilai }))}
+              color="#2563eb"
+              height={220}
+            />
           </div>
         </Card>
 
@@ -74,35 +119,46 @@ export function DashboardPage() {
             action={<Badge variant="warning" size="sm"><TrendingDown size={12} /> +10.5%</Badge>}
           />
           <div className="p-5">
-            <BarChart data={chartPenyaluranBulanan.map((d) => ({ label: d.bulan, value: d.nilai }))} color="#f59e0b" height={220} />
+            <BarChart
+              data={chartPenyaluranBulanan.map((d) => ({ label: d.bulan, value: d.nilai }))}
+              color="#f59e0b"
+              height={220}
+            />
           </div>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Donut - data nyata */}
         <Card className="lg:col-span-1">
           <CardHeader title="Komposisi Donasi" subtitle="Berdasarkan jenis" icon={<HandHeart size={18} />} />
           <div className="p-5 flex justify-center">
-            <DonutChart
-              data={[
-                { label: 'Tunai', value: 45, color: '#2563eb' },
-                { label: 'Zakat', value: 20, color: '#f59e0b' },
-                { label: 'Infaq', value: 15, color: '#10b981' },
-                { label: 'Wakaf', value: 12, color: '#8b5cf6' },
-                { label: 'Barang', value: 8, color: '#64748b' },
-              ]}
-              centerValue="100%"
-              centerLabel="Total"
-            />
+            {donutData.length > 0 ? (
+              <DonutChart
+                data={donutData}
+                centerValue={`${donasi.filter((d) => d.status === 'Lunas').length}`}
+                centerLabel="Transaksi"
+              />
+            ) : (
+              <p className="text-sm text-gray-400 py-10">Belum ada data donasi</p>
+            )}
           </div>
         </Card>
 
+        {/* Tabel donasi terbaru */}
         <Card className="lg:col-span-2">
           <CardHeader
             title="Transaksi Donasi Terbaru"
             subtitle="5 transaksi terakhir"
             icon={<HandHeart size={18} />}
-            action={<button className="text-sm font-semibold text-brand-600 hover:text-brand-700">Lihat Semua</button>}
+            action={
+              <button
+                onClick={() => onNavigate('donasi')}
+                className="text-sm font-semibold text-brand-600 hover:text-brand-700"
+              >
+                Lihat Semua
+              </button>
+            }
           />
           <div className="overflow-x-auto scrollbar-thin">
             <table className="w-full">
@@ -129,12 +185,20 @@ export function DashboardPage() {
         </Card>
       </div>
 
+      {/* Penyaluran terbaru */}
       <Card>
         <CardHeader
           title="Penyaluran Dana Terbaru"
           subtitle="5 penyaluran terakhir"
           icon={<ArrowRightLeft size={18} />}
-          action={<button className="text-sm font-semibold text-brand-600 hover:text-brand-700">Lihat Semua</button>}
+          action={
+            <button
+              onClick={() => onNavigate('penyaluran')}
+              className="text-sm font-semibold text-brand-600 hover:text-brand-700"
+            >
+              Lihat Semua
+            </button>
+          }
         />
         <div className="overflow-x-auto scrollbar-thin">
           <table className="w-full">

@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { Badge, statusVariant } from '@/components/ui/Badge';
 import { AreaChart } from '@/components/charts/AreaChart';
-import { donasiData, penyaluranData, chartDonasiBulanan, chartPenyaluranBulanan } from '@/data/dummyData';
+import { useApp } from '@/context/AppContext';
+import { chartDonasiBulanan, chartPenyaluranBulanan } from '@/data/dummyData';
 import { formatRupiah, formatTanggal } from '@/utils/format';
-import { FileText, Download, Calendar, TrendingUp, TrendingDown, Wallet, FileSpreadsheet, Printer } from 'lucide-react';
+import {
+  FileText, Download, TrendingUp, TrendingDown, Wallet,
+  FileSpreadsheet, Printer,
+} from 'lucide-react';
 
 type ReportTab = 'penerimaan' | 'penyaluran' | 'arusdana' | 'saldo';
 
@@ -18,14 +22,44 @@ const tabs: { key: ReportTab; label: string; icon: typeof FileText }[] = [
 ];
 
 export function LaporanPage() {
-  const [activeTab, setActiveTab] = useState<ReportTab>('penerimaan');
+  const { donasi, penyaluran } = useApp();
 
-  const totalDonasi = donasiData.filter((d) => d.status === 'Lunas').reduce((s, d) => s + d.nominal, 0);
-  const totalPenyaluran = penyaluranData.filter((p) => p.status === 'Disalurkan').reduce((s, p) => s + p.nominal, 0);
+  const [activeTab, setActiveTab] = useState<ReportTab>('penerimaan');
+  const today = new Date().toISOString().split('T')[0];
+  const firstOfMonth = today.slice(0, 8) + '01';
+  const [dateFrom, setDateFrom] = useState(firstOfMonth);
+  const [dateTo, setDateTo] = useState(today);
+  const [jenisLaporan, setJenisLaporan] = useState('semua');
+
+  /* ── Filter berdasarkan tanggal ── */
+  const filteredDonasi = useMemo(() => {
+    return donasi.filter((d) => {
+      const inRange = d.tanggal >= dateFrom && d.tanggal <= dateTo;
+      if (jenisLaporan === 'penerimaan' || jenisLaporan === 'semua') return inRange;
+      return false;
+    });
+  }, [donasi, dateFrom, dateTo, jenisLaporan]);
+
+  const filteredPenyaluran = useMemo(() => {
+    return penyaluran.filter((p) => {
+      const inRange = p.tanggal >= dateFrom && p.tanggal <= dateTo;
+      if (jenisLaporan === 'penyaluran' || jenisLaporan === 'semua') return inRange;
+      return false;
+    });
+  }, [penyaluran, dateFrom, dateTo, jenisLaporan]);
+
+  const totalDonasi = filteredDonasi.filter((d) => d.status === 'Lunas').reduce((s, d) => s + d.nominal, 0);
+  const totalPenyaluran = filteredPenyaluran.filter((p) => p.status === 'Disalurkan').reduce((s, p) => s + p.nominal, 0);
   const saldo = totalDonasi - totalPenyaluran;
+
+  const lunasList = filteredDonasi.filter((d) => d.status === 'Lunas');
+  const disalurkanList = filteredPenyaluran.filter((p) => p.status === 'Disalurkan');
+
+  const periodeLabel = `${formatTanggal(dateFrom)} – ${formatTanggal(dateTo)}`;
 
   return (
     <div className="space-y-5 animate-fade-in">
+      {/* Filter Bar */}
       <Card className="p-5">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div>
@@ -33,22 +67,40 @@ export function LaporanPage() {
             <p className="text-sm text-gray-500">Pilih rentang tanggal untuk laporan</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 items-end">
-            <Input label="Dari Tanggal" type="date" defaultValue="2026-09-01" />
-            <Input label="Sampai Tanggal" type="date" defaultValue="2026-09-30" />
-            <Select label="Jenis Laporan">
+            <Input
+              label="Dari Tanggal"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+            <Input
+              label="Sampai Tanggal"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+            <Select
+              label="Jenis Laporan"
+              value={jenisLaporan}
+              onChange={(e) => setJenisLaporan(e.target.value)}
+            >
               <option value="semua">Semua Laporan</option>
               <option value="penerimaan">Penerimaan Donasi</option>
               <option value="penyaluran">Penyaluran Dana</option>
-              <option value="arusdana">Arus Dana</option>
             </Select>
             <div className="flex gap-2">
-              <Button variant="outline"><FileSpreadsheet size={16} /> Export Excel</Button>
-              <Button variant="primary"><Download size={16} /> Export PDF</Button>
+              <Button variant="outline" onClick={() => alert('Export Excel akan segera tersedia.')}>
+                <FileSpreadsheet size={16} /> Export Excel
+              </Button>
+              <Button variant="primary" onClick={() => window.print()}>
+                <Download size={16} /> Export PDF
+              </Button>
             </div>
           </div>
         </div>
       </Card>
 
+      {/* Tabs */}
       <div className="flex flex-wrap gap-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -69,9 +121,15 @@ export function LaporanPage() {
         })}
       </div>
 
+      {/* ── Tab: Penerimaan Donasi ── */}
       {activeTab === 'penerimaan' && (
         <Card>
-          <CardHeader title="Laporan Penerimaan Donasi" subtitle="Periode: 1 - 30 September 2026" icon={<TrendingUp size={18} />} action={<Button variant="ghost" size="sm"><Printer size={16} /> Cetak</Button>} />
+          <CardHeader
+            title="Laporan Penerimaan Donasi"
+            subtitle={`Periode: ${periodeLabel}`}
+            icon={<TrendingUp size={18} />}
+            action={<Button variant="ghost" size="sm" onClick={() => window.print()}><Printer size={16} /> Cetak</Button>}
+          />
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="bg-brand-50 rounded-lg p-4">
@@ -80,11 +138,13 @@ export function LaporanPage() {
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Jumlah Transaksi</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">{donasiData.filter((d) => d.status === 'Lunas').length}</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">{lunasList.length}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Rata-rata per Transaksi</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">{formatRupiah(Math.round(totalDonasi / donasiData.filter((d) => d.status === 'Lunas').length))}</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">
+                  {lunasList.length > 0 ? formatRupiah(Math.round(totalDonasi / lunasList.length)) : 'Rp 0'}
+                </p>
               </div>
             </div>
             <div className="overflow-x-auto scrollbar-thin">
@@ -100,21 +160,31 @@ export function LaporanPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {donasiData.filter((d) => d.status === 'Lunas').map((d) => (
-                    <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                      <td className="px-4 py-3 text-sm text-gray-600">{formatTanggal(d.tanggal)}</td>
-                      <td className="px-4 py-3 text-sm font-mono text-gray-600">{d.kode}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">{d.donaturNama}</td>
-                      <td className="px-4 py-3"><Badge variant="info">{d.jenis}</Badge></td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">{formatRupiah(d.nominal)}</td>
-                      <td className="px-4 py-3"><Badge variant={statusVariant(d.status)}>{d.status}</Badge></td>
+                  {lunasList.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-10 text-sm text-gray-400">
+                        Tidak ada data pada periode ini.
+                      </td>
                     </tr>
-                  ))}
-                  <tr className="bg-brand-50/50 font-bold">
-                    <td colSpan={4} className="px-4 py-3.5 text-sm text-brand-900">Total Penerimaan</td>
-                    <td className="px-4 py-3.5 text-sm text-brand-900 text-right">{formatRupiah(totalDonasi)}</td>
-                    <td></td>
-                  </tr>
+                  ) : (
+                    lunasList.map((d) => (
+                      <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                        <td className="px-4 py-3 text-sm text-gray-600">{formatTanggal(d.tanggal)}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-gray-600">{d.kode}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-900">{d.donaturNama}</td>
+                        <td className="px-4 py-3"><Badge variant="info">{d.jenis}</Badge></td>
+                        <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">{formatRupiah(d.nominal)}</td>
+                        <td className="px-4 py-3"><Badge variant={statusVariant(d.status)}>{d.status}</Badge></td>
+                      </tr>
+                    ))
+                  )}
+                  {lunasList.length > 0 && (
+                    <tr className="bg-brand-50/50 font-bold">
+                      <td colSpan={4} className="px-4 py-3.5 text-sm text-brand-900">Total Penerimaan</td>
+                      <td className="px-4 py-3.5 text-sm text-brand-900 text-right">{formatRupiah(totalDonasi)}</td>
+                      <td />
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -122,9 +192,15 @@ export function LaporanPage() {
         </Card>
       )}
 
+      {/* ── Tab: Penyaluran Dana ── */}
       {activeTab === 'penyaluran' && (
         <Card>
-          <CardHeader title="Laporan Penyaluran Dana" subtitle="Periode: 1 - 30 September 2026" icon={<TrendingDown size={18} />} action={<Button variant="ghost" size="sm"><Printer size={16} /> Cetak</Button>} />
+          <CardHeader
+            title="Laporan Penyaluran Dana"
+            subtitle={`Periode: ${periodeLabel}`}
+            icon={<TrendingDown size={18} />}
+            action={<Button variant="ghost" size="sm" onClick={() => window.print()}><Printer size={16} /> Cetak</Button>}
+          />
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="bg-amber-50 rounded-lg p-4">
@@ -133,11 +209,13 @@ export function LaporanPage() {
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Jumlah Penyaluran</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">{penyaluranData.filter((p) => p.status === 'Disalurkan').length}</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">{disalurkanList.length}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Penerima Manfaat</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">{new Set(penyaluranData.filter((p) => p.status === 'Disalurkan').map((p) => p.penerimaId)).size}</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">
+                  {new Set(disalurkanList.map((p) => p.penerimaId)).size}
+                </p>
               </div>
             </div>
             <div className="overflow-x-auto scrollbar-thin">
@@ -153,21 +231,31 @@ export function LaporanPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {penyaluranData.filter((p) => p.status === 'Disalurkan').map((p) => (
-                    <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                      <td className="px-4 py-3 text-sm text-gray-600">{formatTanggal(p.tanggal)}</td>
-                      <td className="px-4 py-3 text-sm font-mono text-gray-600">{p.kode}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">{p.penerimaNama}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{p.program}</td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">{formatRupiah(p.nominal)}</td>
-                      <td className="px-4 py-3"><Badge variant={statusVariant(p.status)}>{p.status}</Badge></td>
+                  {disalurkanList.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-10 text-sm text-gray-400">
+                        Tidak ada data pada periode ini.
+                      </td>
                     </tr>
-                  ))}
-                  <tr className="bg-amber-50/50 font-bold">
-                    <td colSpan={4} className="px-4 py-3.5 text-sm text-amber-900">Total Penyaluran</td>
-                    <td className="px-4 py-3.5 text-sm text-amber-900 text-right">{formatRupiah(totalPenyaluran)}</td>
-                    <td></td>
-                  </tr>
+                  ) : (
+                    disalurkanList.map((p) => (
+                      <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                        <td className="px-4 py-3 text-sm text-gray-600">{formatTanggal(p.tanggal)}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-gray-600">{p.kode}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-900">{p.penerimaNama}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{p.program}</td>
+                        <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">{formatRupiah(p.nominal)}</td>
+                        <td className="px-4 py-3"><Badge variant={statusVariant(p.status)}>{p.status}</Badge></td>
+                      </tr>
+                    ))
+                  )}
+                  {disalurkanList.length > 0 && (
+                    <tr className="bg-amber-50/50 font-bold">
+                      <td colSpan={4} className="px-4 py-3.5 text-sm text-amber-900">Total Penyaluran</td>
+                      <td className="px-4 py-3.5 text-sm text-amber-900 text-right">{formatRupiah(totalPenyaluran)}</td>
+                      <td />
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -175,23 +263,36 @@ export function LaporanPage() {
         </Card>
       )}
 
+      {/* ── Tab: Arus Dana ── */}
       {activeTab === 'arusdana' && (
         <div className="space-y-5">
           <Card>
-            <CardHeader title="Laporan Arus Dana" subtitle="Pemasukan vs Pengeluaran 6 bulan terakhir" icon={<TrendingUp size={18} />} />
+            <CardHeader
+              title="Laporan Arus Dana"
+              subtitle="Pemasukan vs Pengeluaran 6 bulan terakhir"
+              icon={<TrendingUp size={18} />}
+            />
             <div className="p-5">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-brand-500" /> Pemasukan Donasi
                   </h4>
-                  <AreaChart data={chartDonasiBulanan.map((d) => ({ label: d.bulan, value: d.nilai }))} color="#2563eb" height={200} />
+                  <AreaChart
+                    data={chartDonasiBulanan.map((d) => ({ label: d.bulan, value: d.nilai }))}
+                    color="#2563eb"
+                    height={200}
+                  />
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-amber-500" /> Penyaluran Dana
                   </h4>
-                  <AreaChart data={chartPenyaluranBulanan.map((d) => ({ label: d.bulan, value: d.nilai }))} color="#f59e0b" height={200} />
+                  <AreaChart
+                    data={chartPenyaluranBulanan.map((d) => ({ label: d.bulan, value: d.nilai }))}
+                    color="#f59e0b"
+                    height={200}
+                  />
                 </div>
               </div>
             </div>
@@ -216,7 +317,9 @@ export function LaporanPage() {
                         <td className="px-4 py-3 text-sm font-semibold text-gray-900">{d.bulan}</td>
                         <td className="px-4 py-3 text-sm text-right text-emerald-600 font-semibold">{formatRupiah(d.nilai)}</td>
                         <td className="px-4 py-3 text-sm text-right text-red-600 font-semibold">-{formatRupiah(keluar)}</td>
-                        <td className={`px-4 py-3 text-sm text-right font-bold ${net >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{net >= 0 ? '+' : ''}{formatRupiah(net)}</td>
+                        <td className={`px-4 py-3 text-sm text-right font-bold ${net >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {net >= 0 ? '+' : ''}{formatRupiah(net)}
+                        </td>
                       </tr>
                     );
                   })}
@@ -227,6 +330,7 @@ export function LaporanPage() {
         </div>
       )}
 
+      {/* ── Tab: Ringkasan Saldo ── */}
       {activeTab === 'saldo' && (
         <div className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -238,6 +342,7 @@ export function LaporanPage() {
                 <p className="text-sm text-brand-100">Total Pemasukan</p>
               </div>
               <p className="text-2xl font-bold">{formatRupiah(totalDonasi)}</p>
+              <p className="text-xs text-brand-200 mt-1">{periodeLabel}</p>
             </Card>
             <Card className="p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white border-0">
               <div className="flex items-center gap-3 mb-3">
@@ -247,6 +352,7 @@ export function LaporanPage() {
                 <p className="text-sm text-amber-100">Total Pengeluaran</p>
               </div>
               <p className="text-2xl font-bold">{formatRupiah(totalPenyaluran)}</p>
+              <p className="text-xs text-amber-200 mt-1">{periodeLabel}</p>
             </Card>
             <Card className="p-5 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0">
               <div className="flex items-center gap-3 mb-3">
@@ -256,10 +362,16 @@ export function LaporanPage() {
                 <p className="text-sm text-emerald-100">Saldo Akhir</p>
               </div>
               <p className="text-2xl font-bold">{formatRupiah(saldo)}</p>
+              <p className="text-xs text-emerald-200 mt-1">{periodeLabel}</p>
             </Card>
           </div>
           <Card>
-            <CardHeader title="Ringkasan Saldo" subtitle="Periode: 1 - 30 September 2026" icon={<Wallet size={18} />} />
+            <CardHeader
+              title="Ringkasan Saldo"
+              subtitle={`Periode: ${periodeLabel}`}
+              icon={<Wallet size={18} />}
+              action={<Button variant="ghost" size="sm" onClick={() => window.print()}><Printer size={16} /> Cetak</Button>}
+            />
             <div className="p-5">
               <table className="w-full">
                 <thead>
@@ -278,20 +390,21 @@ export function LaporanPage() {
                     <td className="px-4 py-3.5 text-sm text-right font-bold text-gray-900">{formatRupiah(0)}</td>
                   </tr>
                   <tr className="border-b border-gray-50">
-                    <td className="px-4 py-3.5 text-sm text-gray-700">Penerimaan Donasi</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-700">Penerimaan Donasi ({lunasList.length} transaksi)</td>
                     <td className="px-4 py-3.5 text-sm text-right font-semibold text-emerald-600">{formatRupiah(totalDonasi)}</td>
                     <td className="px-4 py-3.5 text-sm text-right text-gray-400">—</td>
                     <td className="px-4 py-3.5 text-sm text-right font-bold text-gray-900">{formatRupiah(totalDonasi)}</td>
                   </tr>
                   <tr className="border-b border-gray-50">
-                    <td className="px-4 py-3.5 text-sm text-gray-700">Penyaluran Dana</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-700">Penyaluran Dana ({disalurkanList.length} transaksi)</td>
                     <td className="px-4 py-3.5 text-sm text-right text-gray-400">—</td>
                     <td className="px-4 py-3.5 text-sm text-right font-semibold text-red-600">{formatRupiah(totalPenyaluran)}</td>
                     <td className="px-4 py-3.5 text-sm text-right font-bold text-gray-900">{formatRupiah(saldo)}</td>
                   </tr>
                   <tr className="bg-brand-50/50 font-bold">
                     <td className="px-4 py-3.5 text-sm text-brand-900">Saldo Akhir Periode</td>
-                    <td colSpan={2} className="px-4 py-3.5"></td>
+                    <td className="px-4 py-3.5 text-sm text-right font-bold text-emerald-600">{formatRupiah(totalDonasi)}</td>
+                    <td className="px-4 py-3.5 text-sm text-right font-bold text-red-600">{formatRupiah(totalPenyaluran)}</td>
                     <td className="px-4 py-3.5 text-sm text-right text-brand-900">{formatRupiah(saldo)}</td>
                   </tr>
                 </tbody>
