@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIDONA</title>
+    <!-- Redirect ke index.html agar React Router bisa menangani path -->
+    <script>
+      // GitHub Pages SPA redirect trick
+      const path = window.location.pathname;
+      const repoName = '/yayasan-aguaria';
+      if (path.startsWith(repoName)) {
+        const newPath = path.slice(repoName.length) || '/';
+        sessionStorage.setItem('redirect', newPath + window.location.search);
+      }
+      window.location.replace(repoName + '/');
+    </script>
+  </head>
+  <body></body>
+</html>

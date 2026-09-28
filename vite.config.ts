@@ -4,6 +4,9 @@ import { fileURLToPath, URL } from 'node:url';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Base path sesuai nama repository GitHub Pages
+  // Format: '/nama-repo/'
+  base: '/yayasan-aguaria/',
   plugins: [react()],
   resolve: {
     alias: {
