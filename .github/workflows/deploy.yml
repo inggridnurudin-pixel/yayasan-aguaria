@@ -3,7 +3,7 @@ name: Deploy ke GitHub Pages
 on:
   push:
     branches:
-      - main   # jalankan setiap push ke branch main
+      - main
 
 # Izin untuk menulis ke GitHub Pages
 permissions:
@@ -11,23 +11,20 @@ permissions:
   pages: write
   id-token: write
 
-# Pastikan hanya satu deployment berjalan pada satu waktu
+# Hanya satu deployment aktif pada satu waktu
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  # ── Job 1: Build ────────────────────────────────────────────
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Checkout kode
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -36,10 +33,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Inject variabel Supabase dari GitHub Secrets ke .env.local
-      - name: Buat file .env.local dari Secrets
+      - name: Buat .env.local dari GitHub Secrets
         run: |
-          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env.local
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env.local
           echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env.local
 
       - name: Build aplikasi
@@ -48,11 +44,20 @@ jobs:
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v4
 
-      - name: Upload artifact
+      - name: Upload artifact ke Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
+  # ── Job 2: Deploy ───────────────────────────────────────────
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
       - name: Deploy ke GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
