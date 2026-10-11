@@ -2,60 +2,15 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SIDONA — Sistem Informasi Donasi Yayasan</title>
-    <!-- Redirect ke landing page di folder frontend/ -->
-    <meta http-equiv="refresh" content="0; url=frontend/index.html" />
-    <style>
-      body {
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        background: #eff6ff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        margin: 0;
-      }
-      .box {
-        text-align: center;
-        background: #fff;
-        border-radius: 16px;
-        padding: 48px 40px;
-        box-shadow: 0 4px 24px rgba(0,0,0,.08);
-        max-width: 380px;
-        width: 90%;
-      }
-      .logo {
-        width: 56px; height: 56px;
-        background: #2563eb;
-        border-radius: 14px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28px;
-        margin-bottom: 20px;
-      }
-      h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
-      p  { font-size: 14px; color: #64748b; margin-bottom: 24px; }
-      a  {
-        display: inline-block;
-        background: #2563eb;
-        color: #fff;
-        font-size: 14px;
-        font-weight: 600;
-        padding: 10px 24px;
-        border-radius: 8px;
-        text-decoration: none;
-      }
-      a:hover { background: #1d4ed8; }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <title>SIDONA - Sistem Informasi Donasi Yayasan</title>
   </head>
   <body>
-    <div class="box">
-      <div class="logo">❤</div>
-      <h1>SIDONA</h1>
-      <p>Mengalihkan ke halaman utama…</p>
-      <a href="frontend/index.html">Klik jika tidak otomatis →</a>
-    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
