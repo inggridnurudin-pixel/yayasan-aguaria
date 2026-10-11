@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIDONA — Sistem Informasi Donasi Yayasan</title>
+    <meta name="description" content="Sistem pencatatan dan pengelolaan donasi yayasan berbasis web" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ═══════════════════════════════════════════════
+         HEADER / NAVBAR
+    ═══════════════════════════════════════════════ -->
+    <header class="navbar">
+      <div class="container navbar__inner">
+        <div class="navbar__brand">
+          <div class="navbar__logo">❤</div>
+          <div>
+            <span class="navbar__title">SIDONA</span>
+            <span class="navbar__subtitle">Sistem Donasi Yayasan</span>
+          </div>
+        </div>
+        <a href="https://inggridnurudin-pixel.github.io/yayasan-aguaria/" target="_blank" class="btn btn--primary">
+          Buka Aplikasi →
+        </a>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════
+         HERO
+    ═══════════════════════════════════════════════ -->
+    <section class="hero">
+      <div class="container hero__inner">
+        <div class="hero__badge">Sistem Informasi Donasi</div>
+        <h1 class="hero__title">
+          SIDONA<br />
+          <span class="hero__title--accent">Yayasan Amanah Ummat</span>
+        </h1>
+        <p class="hero__desc">
+          Sistem pencatatan donasi, pengelolaan donatur, penyaluran dana, dan
+          pelaporan keuangan yayasan secara real-time berbasis Supabase.
+        </p>
+        <div class="hero__actions">
+          <a href="https://inggridnurudin-pixel.github.io/yayasan-aguaria/" target="_blank" class="btn btn--primary btn--lg">
+            🚀 Buka Sistem
+          </a>
+          <a href="https://github.com/inggridnurudin-pixel/yayasan-aguaria" target="_blank" class="btn btn--outline btn--lg">
+            📂 Lihat Kode
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         STATISTIK
+    ═══════════════════════════════════════════════ -->
+    <section class="stats">
+      <div class="container stats__grid" id="statsGrid">
+        <!-- diisi oleh script.js dari Supabase -->
+        <div class="stat-card">
+          <div class="stat-card__icon stat-card__icon--blue">💰</div>
+          <div class="stat-card__value" id="statTotalDonasi">—</div>
+          <div class="stat-card__label">Total Donasi</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__icon stat-card__icon--amber">🤝</div>
+          <div class="stat-card__value" id="statTotalDonatur">—</div>
+          <div class="stat-card__label">Donatur Aktif</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__icon stat-card__icon--green">📤</div>
+          <div class="stat-card__value" id="statTotalPenyaluran">—</div>
+          <div class="stat-card__label">Dana Disalurkan</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__icon stat-card__icon--violet">🏫</div>
+          <div class="stat-card__value" id="statTotalPenerima">—</div>
+          <div class="stat-card__label">Penerima Manfaat</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         FITUR
+    ═══════════════════════════════════════════════ -->
+    <section class="features">
+      <div class="container">
+        <h2 class="section-title">Fitur Unggulan</h2>
+        <p class="section-desc">Kelola seluruh operasional yayasan dalam satu platform</p>
+        <div class="features__grid">
+          <div class="feature-card">
+            <div class="feature-card__icon">📋</div>
+            <h3>Pencatatan Donasi</h3>
+            <p>Catat setiap donasi masuk — Tunai, Zakat, Infaq, Wakaf, maupun Barang — lengkap dengan metode pembayaran dan status verifikasi.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">👥</div>
+            <h3>Manajemen Donatur</h3>
+            <p>Kelola data donatur individu maupun lembaga, pantau riwayat donasi, dan lacak total kontribusi setiap donatur.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">📤</div>
+            <h3>Penyaluran Dana</h3>
+            <p>Ajukan, setujui, dan lacak penyaluran dana ke penerima manfaat dengan alur persetujuan yang terstruktur.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">🏛️</div>
+            <h3>Data Penerima</h3>
+            <p>Daftarkan penerima manfaat — Panti Asuhan, Masjid, Sekolah, Lembaga, maupun Individu — dan pantau total bantuan yang diterima.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">📊</div>
+            <h3>Laporan Keuangan</h3>
+            <p>Generate laporan penerimaan, penyaluran, arus dana, dan ringkasan saldo dengan filter periode tanggal yang fleksibel.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">⚙️</div>
+            <h3>Pengaturan Sistem</h3>
+            <p>Konfigurasi profil yayasan, preferensi notifikasi, dan keamanan akun — semua tersimpan langsung ke database.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         TEKNOLOGI
+    ═══════════════════════════════════════════════ -->
+    <section class="tech">
+      <div class="container">
+        <h2 class="section-title">Teknologi yang Digunakan</h2>
+        <div class="tech__grid">
+          <div class="tech-badge">⚛️ React 18</div>
+          <div class="tech-badge">📘 TypeScript</div>
+          <div class="tech-badge">⚡ Vite</div>
+          <div class="tech-badge">🎨 Tailwind CSS</div>
+          <div class="tech-badge">🟢 Supabase</div>
+          <div class="tech-badge">🐘 PostgreSQL</div>
+          <div class="tech-badge">🐱 GitHub Pages</div>
+          <div class="tech-badge">🔄 GitHub Actions</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         CTA
+    ═══════════════════════════════════════════════ -->
+    <section class="cta">
+      <div class="container cta__inner">
+        <h2>Siap Menggunakan SIDONA?</h2>
+        <p>Akses sistem langsung melalui browser — tidak perlu instalasi.</p>
+        <a href="https://inggridnurudin-pixel.github.io/yayasan-aguaria/" target="_blank" class="btn btn--white btn--lg">
+          🚀 Buka Aplikasi Sekarang
+        </a>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         FOOTER
+    ═══════════════════════════════════════════════ -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <p>© 2026 SIDONA — Sistem Informasi Donasi Yayasan</p>
+        <p>
+          <a href="https://github.com/inggridnurudin-pixel/yayasan-aguaria" target="_blank">GitHub</a>
+          &nbsp;·&nbsp;
+          <a href="https://inggridnurudin-pixel.github.io/yayasan-aguaria/" target="_blank">Live Demo</a>
+        </p>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
