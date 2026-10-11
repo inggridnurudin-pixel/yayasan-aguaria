@@ -1,3 +1,9 @@
+# Folder internal Bolt.new — tidak perlu di-track
+.bolt/
+
+# Supabase migrations sudah dipindah ke backend/
+supabase/
+
 logs
 *.log
 npm-debug.log*
