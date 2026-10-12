@@ -30,45 +30,28 @@ yayasan-aguaria/
 │   ├── script.js             # Fetch statistik real-time dari Supabase
 │   └── style.css             # Desain responsif landing page
 │
-├── src/                      # Source code aplikasi React (SPA)
-│   ├── components/           # Komponen UI reusable
-│   │   ├── charts/           # AreaChart, BarChart, DonutChart
-│   │   ├── layout/           # Sidebar, Topbar
-│   │   └── ui/               # Badge, Button, Card, Input, Modal, Toast
-│   ├── context/
-│   │   └── AppContext.tsx    # State management terpusat + Supabase CRUD
-│   ├── data/
-│   │   └── dummyData.ts      # Data referensi awal
-│   ├── lib/
-│   │   ├── supabase.ts       # Inisialisasi Supabase client
-│   │   ├── services.ts       # Service layer semua operasi database
-│   │   └── database.types.ts # Type definisi tabel Supabase
-│   ├── pages/                # Halaman-halaman aplikasi
-│   │   ├── DashboardPage.tsx
-│   │   ├── DonasiPage.tsx
-│   │   ├── DonaturPage.tsx
-│   │   ├── PenyaluranPage.tsx
-│   │   ├── PenerimaPage.tsx
-│   │   ├── LaporanPage.tsx
-│   │   └── PengaturanPage.tsx
-│   ├── types/
-│   │   └── index.ts          # Definisi tipe TypeScript
-│   └── utils/
-│       └── format.ts         # Fungsi format Rupiah, tanggal
-│
-├── supabase/
-│   └── migrations/           # Riwayat migration (referensi)
+├── app/                      # Source code aplikasi React (SPA)
+│   ├── src/
+│   │   ├── components/       # Komponen UI reusable (charts, layout, ui)
+│   │   ├── context/          # State management + Supabase CRUD
+│   │   ├── data/             # Data dummy referensi awal
+│   │   ├── lib/              # Supabase client, services, database types
+│   │   ├── pages/            # Halaman: Dashboard, Donasi, Donatur, dll.
+│   │   ├── types/            # Definisi tipe TypeScript
+│   │   └── utils/            # Format Rupiah, tanggal
+│   ├── public/               # Asset statis (404.html untuk SPA routing)
+│   ├── index.html            # Entry point Vite
+│   ├── package.json          # Dependencies
+│   ├── vite.config.ts        # Konfigurasi Vite + base path
+│   ├── tailwind.config.js    # Konfigurasi Tailwind CSS
+│   └── tsconfig.json         # Konfigurasi TypeScript
 │
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml        # GitHub Actions — auto deploy ke GitHub Pages
 │
-├── index.html                # Entry point root (redirect ke frontend/)
 ├── README.md                 # Dokumentasi proyek ini
-├── vite.config.ts            # Konfigurasi Vite + base path GitHub Pages
-├── tailwind.config.js        # Konfigurasi Tailwind CSS
-├── tsconfig.app.json         # Konfigurasi TypeScript
-└── package.json              # Dependencies proyek
+└── (tidak ada file lain di root)
 ```
 
 ---
@@ -118,25 +101,18 @@ Jalankan file SQL berikut secara berurutan di **Supabase Dashboard → SQL Edito
 ```bash
 # 1. Clone repository
 git clone https://github.com/inggridnurudin-pixel/yayasan-aguaria.git
-cd yayasan-aguaria
+cd yayasan-aguaria/app
 
 # 2. Install dependencies
 npm install
 
-# 3. Buat file environment
-# Buat file .env.local dan isi:
-# VITE_SUPABASE_URL=https://zzqngubqelbggezkpaxt.supabase.co
-# VITE_SUPABASE_ANON_KEY=<anon key Supabase>
+# 3. Buat file .env.local di dalam folder app/
+echo "VITE_SUPABASE_URL=https://zzqngubqelbggezkpaxt.supabase.co" > .env.local
+echo "VITE_SUPABASE_ANON_KEY=<anon key>" >> .env.local
 
 # 4. Jalankan dev server
 npm run dev
 ```
-
----
-
-## 🚀 Deploy
-
-Aplikasi di-deploy otomatis ke GitHub Pages setiap kali ada push ke branch `main` melalui GitHub Actions (`.github/workflows/deploy.yml`).
 
 ---
 
